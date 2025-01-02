@@ -14,6 +14,7 @@
 library(tidyverse)      # Manipulation des données et graphiques
 library(conflicted)     # Gestion des conflits de noms de fonctions entre packages
 library(questionr)      # Statistiques descriptives
+library(skimr)          # Statistiques descriptives
 library(BioStatR)       # Mesures de liaison pour les variables quantitatives (rapport de corrélation)
 library(DescTools)      # Mesures de liaison pour les variables qualitatives (Cramer, Tschuprow)
 library(FactoMineR)     # Caractérisation des classes
