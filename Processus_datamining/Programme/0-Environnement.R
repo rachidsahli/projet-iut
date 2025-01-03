@@ -19,6 +19,7 @@ library(BioStatR)       # Mesures de liaison pour les variables quantitatives (r
 library(DescTools)      # Mesures de liaison pour les variables qualitatives (Cramer, Tschuprow)
 library(FactoMineR)     # Caractérisation des classes
 library(naniar)         # Gestion des valeurs manquantes
+library(zoo)            # Gestion des valeurs manquantes
 library(rpart)          # Modélisation - Arbre de décision
 library(rpart.plot)     # Modélisation - Arbre de décision
 library(class)          # Modélisation - k plus proches voisins
