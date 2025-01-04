@@ -23,9 +23,9 @@ gg_miss_var(base_2022, show_pct = TRUE) # valeurs manquantes en % par variables 
 
 vis_miss(base_2022, warn_large_data = FALSE) # valeurs manquantes en % par variables (graphique)
 
-gg_miss_upset(base_2022) # visualisation par groupe de données
+gg_miss_upset(base_2022) # visualisation par groupe de donn?es
 
-miss_var_summary(base_2022) # resumé des valeurs manquantes par variables
+miss_var_summary(base_2022) # resumÃ© des valeurs manquantes par variables
 
 # Traitement variable par variable -----
 
@@ -70,7 +70,7 @@ base_2022 <- base_2022[!is.na(base_2022$nb_adultes_dernier_sejour),] # dernier s
 base_2022 <- base_2022[!is.na(base_2022$mt_extras_sejours_2021),] # mt_extras_sejours_2021
 
 
-# Application des traitements définis -----
+# Application des traitements d?finis -----
 
 ## Nb_enfants_premiers_sejour : 34 132 valeurs manquantes
 ## => Imputation par la valeur 0

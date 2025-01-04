@@ -13,6 +13,7 @@
 
 library(tidyverse)      # Manipulation des données et graphiques
 library(conflicted)     # Gestion des conflits de noms de fonctions entre packages
+library(lubridate)      # Gestion des dates
 library(questionr)      # Statistiques descriptives
 library(skimr)          # Statistiques descriptives
 library(BioStatR)       # Mesures de liaison pour les variables quantitatives (rapport de corrélation)
@@ -32,19 +33,14 @@ conflict_prefer("slice", "dplyr")
 
 # Import data -----
 
-base_2022 <- read.table("Z:/sae_processus/Data/base_tourisme_2022_12.txt", 
+base_2022 <- read.table("~/Documents/Iut/projets but stid/2024-2025/Processus_datamining/Processus_datamining/Data/base_tourisme_2022_12.txt", 
                         encoding = "UTF-8",
                         sep = ";",
                         header = TRUE,
                         na.strings = "")  # Année 2022
 
-base_2023 <- read.table("Z:/sae_processus/Data/base_tourisme_2023_12.txt", 
+base_2023 <- read.table("~/Documents/Iut/projets but stid/2024-2025/Processus_datamining/Processus_datamining/Data/base_tourisme_2023_12.txt", 
                         encoding = "UTF-8",
                         sep = ";",
                         header = TRUE,
                         na.strings = "") # Année 2023
-
-# Renommage de la variable id_client -----
-
-base_2022 <- base_2022 %>% rename(id_client = ï..id_client)
-base_2023 <- base_2023 %>% rename(id_client = ï..id_client)
