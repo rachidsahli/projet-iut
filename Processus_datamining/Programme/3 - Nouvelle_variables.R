@@ -29,3 +29,21 @@ base_2022 <- base_2022 %>%
   mutate(
     mt_sejours_moyen = ifelse(nb_sejours_total > 0, mt_sejours_total / nb_sejours_total, 0)
   )
+
+# Séparation de la variable liste_extras
+liste_extras <- base_2022 %>%
+  pull(liste_extras) %>%          
+  as.character() %>%              
+  strsplit(split = "\\|") %>%     
+  unlist() %>%                    
+  unique()  
+
+for (extra in liste_extras) {
+  base_2022 <- base_2022 %>%
+    mutate(!!extra := ifelse(str_detect(liste_extras, fixed(extra)), 1, 0))
+}
+
+skim(base_2022) ### Audit
+
+
+

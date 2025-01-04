@@ -5,10 +5,10 @@
 #
 # DONNEES   : Agence de voyage
 #
-# PROGRAMME : 4 - Etude_univariee
+# PROGRAMME : 4 - Etude_univariÃ©e
 #_______________________________________________________________________________
 
-# Résumé statistique univariée
+# R?sum? statistique univariÃ©e
 skim(base_2022)
 
 # Graphique variable quantitative
@@ -34,14 +34,14 @@ plot_quali <- function(data, variable) {
   var <- as.factor(data[[variable]])
   
     if (length(unique(var)) > 30) {
-    warning(paste("La variable", variable, "a trop de catégories pour être affichée correctement."))
+    warning(paste("La variable", variable, "a trop de cat?gories pour ?tre affich?e correctement."))
     return(NULL)
     }
   
   barplot(table(var), 
           main = paste("Barplot de", variable), 
           xlab = variable, 
-          ylab = "Fréquence", 
+          ylab = "Fr?quence", 
           col = "lightgreen", 
           border = "black", 
           las = 0.5)
