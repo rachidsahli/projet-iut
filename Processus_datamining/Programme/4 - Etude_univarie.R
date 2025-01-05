@@ -8,7 +8,7 @@
 # PROGRAMME : 4 - Etude_univariée
 #_______________________________________________________________________________
 
-# R?sum? statistique univariée
+# Résumé statistique univariée
 skim(base_2022)
 
 # Graphique variable quantitative

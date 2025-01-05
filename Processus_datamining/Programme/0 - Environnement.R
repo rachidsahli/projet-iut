@@ -21,6 +21,7 @@ library(DescTools)      # Mesures de liaison pour les variables qualitatives (Cr
 library(FactoMineR)     # Caractérisation des classes
 library(naniar)         # Gestion des valeurs manquantes
 library(zoo)            # Gestion des valeurs manquantes
+library(corrplot)       # Corrélation
 library(rpart)          # Modélisation - Arbre de décision
 library(rpart.plot)     # Modélisation - Arbre de décision
 library(class)          # Modélisation - k plus proches voisins

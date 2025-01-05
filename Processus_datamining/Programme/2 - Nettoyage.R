@@ -70,7 +70,7 @@ base_2022 <- base_2022[!is.na(base_2022$nb_adultes_dernier_sejour),] # dernier s
 base_2022 <- base_2022[!is.na(base_2022$mt_extras_sejours_2021),] # mt_extras_sejours_2021
 
 
-# Application des traitements d?finis -----
+# Application des traitements définis -----
 
 ## Nb_enfants_premiers_sejour : 34 132 valeurs manquantes
 ## => Imputation par la valeur 0
