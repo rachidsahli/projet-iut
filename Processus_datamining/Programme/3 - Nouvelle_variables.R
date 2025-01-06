@@ -46,6 +46,8 @@ base_2022 <- base_2022 %>%
     nb_participants_premier_sejours = nb_adultes_premier_sejour + nb_enfants_premier_sejour,
     nb_participants_dernier_sejours = nb_adultes_dernier_sejour + nb_enfants_dernier_sejour,
     delai_mois = interval(date_fin_premier_sejour, date_debut_dernier_sejour) %/% months(1),
+    frequence_sejours = (nb_sejours_2020 + nb_sejours_2021 + nb_sejours_2022) /3,
+    actif_parrainage = ifelse(flag_est_parrain == 1 | flag_est_filleul == 1, 1, 0),
     nb_extras = ifelse(Aucun != 1, 
                        as.numeric(as.character(Boutique)) + 
                          as.numeric(as.character(Excursion)) + 
@@ -57,7 +59,25 @@ base_2022 <- base_2022 %>%
                        0)
   ) %>% 
   mutate(
-    mt_sejours_moyen = ifelse(nb_sejours_total > 0, mt_sejours_total / nb_sejours_total, 0)
+    mt_sejours_moyen = ifelse(nb_sejours_total > 0, mt_sejours_total / nb_sejours_total, 0),
+    nb_saisons = n_distinct(c(saison_premier_sejour, saison_dernier_sejour)),
+    nb_destinations = n_distinct(c(type_destination_premier_sejour, type_destination_dernier_sejour)),
+    ratio_extras = total_extras / mt_sejours_total,
+    nb_extras_sejours = nb_extras / nb_sejours_total,
+    evo_nb_participants = nb_participants_dernier_sejours - nb_participants_premier_sejours,
+    meme_caract_sejours = as.factor(ifelse(saison_premier_sejour == saison_dernier_sejour &
+                                             type_destination_premier_sejour == type_destination_dernier_sejour &
+                                             gamme_premier_sejour == gamme_dernier_sejour &
+                                             nb_adultes_premier_sejour == nb_adultes_dernier_sejour &
+                                             nb_enfants_premier_sejour == nb_enfants_dernier_sejour &
+                                             pays_premier_sejour == pays_dernier_sejour &
+                                             canal_reservation_premier_sejour == canal_reservation_dernier_sejour, 1, 0
+                                             ))
   )
+
+
+
+
+
 
 skim(base_2022) ### Audit
