@@ -22,6 +22,10 @@ library(FactoMineR)     # Caractérisation des classes
 library(naniar)         # Gestion des valeurs manquantes
 library(zoo)            # Gestion des valeurs manquantes
 library(corrplot)       # Corrélation
+library(woeBinning)     # Discrétisation supervisée
+library(smbinning)      # Discrétisation supervisée
+library(caret)          # Modélisation - Général
+library(pROC)           # Modélisation - Général
 library(rpart)          # Modélisation - Arbre de décision
 library(rpart.plot)     # Modélisation - Arbre de décision
 library(class)          # Modélisation - k plus proches voisins
