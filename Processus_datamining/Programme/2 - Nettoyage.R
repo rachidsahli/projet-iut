@@ -29,16 +29,16 @@ miss_var_summary(base_2022) # resumé des valeurs manquantes par variables
 
 # Traitement variable par variable -----
 
-# Suppression de la variable nationalite car inutile -----
-base_2022 <- subset(base_2022, select = -nationalite)
-
 ## Imputation par la valeur 0 -----
 base_2022$nb_enfants_premier_sejour[is.na(base_2022$nb_enfants_premier_sejour)] <- 0
 base_2022$nb_enfants_dernier_sejour[is.na(base_2022$nb_enfants_dernier_sejour)] <- 0 # 2022
 
 base_2022$mt_extras_sejours_2021[is.na(base_2022$mt_extras_sejours_2021)] <- 0
 
-## Imputation par la valeur Autre -----
+base_2022$nb_adultes_premier_sejour[is.na(base_2022$nb_adultes_premier_sejour)] <- 0
+base_2022$nb_adultes_dernier_sejour[is.na(base_2022$nb_adultes_dernier_sejour)] <- 0
+
+## Imputation par la valeur Aucun -----
 base_2022$liste_extras <- as.character(base_2022$liste_extras) # conversion en character
 base_2022$liste_extras[is.na(base_2022$liste_extras)] <- "Aucun" # imputation
 base_2022$liste_extras <- as.factor(base_2022$liste_extras) # conversion en factor
@@ -58,15 +58,9 @@ base_2022 <- base_2022 %>%
                                                     canal_reservation_dernier_sejour, 
                                                     canal_reservation_premier_sejour))
 
-## Suppression des observations sur les variables suivantes : 
-## - nb_adultes_premier_sejour
-## - nb_adultes_dernier_sejour
-
-# 493 observations n'ont pas de valeurs sur ces deux variables
-sum(is.na(base_2022$nb_adultes_dernier_sejour) & is.na(base_2022$nb_adultes_premier_sejour))
-
-base_2022 <- base_2022[!is.na(base_2022$nb_adultes_premier_sejour),] # premier sejour
-base_2022 <- base_2022[!is.na(base_2022$nb_adultes_dernier_sejour),] # dernier sejour
+# Transformation du type de variables
+base_2022$gamme_premier_sejour <- as.factor(base_2022$gamme_premier_sejour)
+base_2022$gamme_dernier_sejour <- as.factor(base_2022$gamme_dernier_sejour)
 
 
 # Application des traitements définis -----
@@ -78,6 +72,12 @@ base_2022 <- base_2022[!is.na(base_2022$nb_adultes_dernier_sejour),] # dernier s
 ## => Imputation par la valeur 0
 
 ## Mt_extras_sejours_2021 : 1100 valeurs manquantes
+## => Imputation par la valeur 0
+
+## Nb_adultes_premier_sejour
+## => Imputation par la valeur 0
+
+## Nb_adultes_premier_sejour
 ## => Imputation par la valeur 0
 
 ## Liste_extras : 23 151 valeurs manquantes
@@ -98,7 +98,6 @@ base_2022 <- base_2022[!is.na(base_2022$nb_adultes_dernier_sejour),] # dernier s
 ## mt_extras_sejours_2021 : 1100 valeurs manquantes
 ## => Suppression des observations
 
-## Au total, suppression de 575 (1.14 % de la base initial).
 ## Verification des valeurs manquantes dans la base
 
 skim(base_2022)

@@ -9,7 +9,7 @@
 #_______________________________________________________________________________
 
 
-# Echantillonnage stratifié sur la variable cible
+# Echantillonnage stratifié sur la variable cible -----
 # - apprentissage : 70%
 # - test : 30%
 

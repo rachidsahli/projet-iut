@@ -26,6 +26,8 @@ library(woeBinning)     # Discrétisation supervisée
 library(smbinning)      # Discrétisation supervisée
 library(caret)          # Modélisation - Général
 library(pROC)           # Modélisation - Général
+library(carData)        # Modélisation - Régression logistique
+library(car)            # Modélisation - Régression logistique
 library(rpart)          # Modélisation - Arbre de décision
 library(rpart.plot)     # Modélisation - Arbre de décision
 library(class)          # Modélisation - k plus proches voisins
@@ -43,9 +45,3 @@ base_2022 <- read.table("~/Documents/Iut/projets but stid/2024-2025/Processus_da
                         sep = ";",
                         header = TRUE,
                         na.strings = "")  # Année 2022
-
-base_2023 <- read.table("~/Documents/Iut/projets but stid/2024-2025/Processus_datamining/Processus_datamining/Data/base_tourisme_2023_12.txt", 
-                        encoding = "UTF-8",
-                        sep = ";",
-                        header = TRUE,
-                        na.strings = "") # Année 2023
