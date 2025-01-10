@@ -13,6 +13,8 @@
 
 library(tidyverse)      # Manipulation des données et graphiques
 library(conflicted)     # Gestion des conflits de noms de fonctions entre packages
+library(knitr)          # Création de tableau
+library(gridExtra)      # Arrangement de graphique
 library(lubridate)      # Gestion des dates
 library(questionr)      # Statistiques descriptives
 library(skimr)          # Statistiques descriptives
@@ -28,6 +30,10 @@ library(caret)          # Modélisation - Général
 library(pROC)           # Modélisation - Général
 library(carData)        # Modélisation - Régression logistique
 library(car)            # Modélisation - Régression logistique
+library(blorr)          # Modélisation - Régression logistique
+library(emmeans)        # Modélisation - Régression logistique
+library(broom)          # Modélisation - Régression logistique
+library(glmnet)         # Modélisation - Régression logistique pénalisée
 library(rpart)          # Modélisation - Arbre de décision
 library(rpart.plot)     # Modélisation - Arbre de décision
 library(class)          # Modélisation - k plus proches voisins
@@ -45,3 +51,4 @@ base_2022 <- read.table("~/Documents/Iut/projets but stid/2024-2025/Processus_da
                         sep = ";",
                         header = TRUE,
                         na.strings = "")  # Année 2022
+

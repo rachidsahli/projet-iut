@@ -29,3 +29,4 @@ test <- base_2022 %>%
 
 freq(apprentissage$flag_reachat)
 freq(test$flag_reachat)
+

@@ -101,3 +101,4 @@ base_2022$gamme_dernier_sejour <- as.factor(base_2022$gamme_dernier_sejour)
 ## Verification des valeurs manquantes dans la base
 
 skim(base_2022)
+
