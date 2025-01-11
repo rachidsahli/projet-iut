@@ -11,7 +11,7 @@
 
 # Environnement -----
 
-setwd("/Users/rs777/Documents/Iut/projets but stid/2024-2025/Projet/risque_banque")
+setwd("/Users/rs777/Documents/Projet-datascience/Risque_banque")
 
 # Import library -----
 
@@ -53,8 +53,8 @@ conflict_prefer("slice", "dplyr")
 
 periode_2021 <- read_sas("data/bt2021.sas7bdat")
 
-periode_2022 <- read_sas("data/bt2021.sas7bdat")
+periode_2022 <- read_sas("data/bt2022.sas7bdat")
 
-periode_2023 <- read_sas("data/bt2021.sas7bdat")
+periode_2023 <- read_sas("data/bt2023.sas7bdat")
 
-periode_reference <- read_sas("data/bt2021.sas7bdat")
+periode_reference <- read_sas("data/btref.sas7bdat")
