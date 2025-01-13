@@ -72,3 +72,4 @@ kable(check_vide(periode_reference), col.names = c("Variables","Valeurs vides"))
 
 
 
+
