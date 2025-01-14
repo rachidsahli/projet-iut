@@ -7,12 +7,17 @@ L'objectif est de classifier les passagers en fonction de divers critères tels 
 
 - **Préparation des données** : Nettoyage et normalisation des données
 
-- **Modélisation** : Utilisation des modèles suivants :
-- Régression Logistique
-- Arbre de Décision
-- K-plus proches voisins (KNN)
-- Forêt aléatoire
-- Support Vector Machine (SVM)         
+- **Modélisation** :
+    
+     - Régression Logistique
+  
+     - Arbre de Décision
+     
+     - K-plus proches voisins (KNN)
+
+     - Forêt aléatoire
+                    
+     - Support Vector Machine (SVM)         
 
 - **Évaluation** : Comparaison des performances des modèles avec des métriques
 
