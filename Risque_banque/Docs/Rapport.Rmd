@@ -66,3 +66,26 @@ BUT SD FA EMS - 2025
 \newpage
 
 # Introduction
+\begin{flushleft}
+    \hspace*{1cm}Lorsque une banque octroi un crédit à un emprunteur, elle s'expose à ce que ce dernier ne puisse rembourser, en partie ou en totalité, les montant engagés. Elle prend donc le risque de supporter des pertes financières. Le risque de crédit correspond à la probabilité d'une perte due à la défaillance d'un emprunteur dans le remboursement d'une dette quelconque. Afin de se couvrir contre le risque de crédit, la banque dispose de plusieurs réponses possibles et complémentaires ; la sélection des bons risques de crédit (politiques d'octroi de crédit), la gestion optimisée des crédits en cours de vie ou encore la couverture financière des risques probables.
+
+Ce projet consiste à effectuer un suivi du score de crédit\footnote{Score de prédiction d'un défaut futur du client.} sur la période 2023 en comparaison avec la période de référence. Dans un second temps, nous calibrerons un modèle statistique dans l'obectif de déterminer une probabilité de défaut.
+\end{flushleft}
+
+# Préparation des données
+
+Nous disposons de deux fichiers de données associées à des périodes différentes (2023, Référence). Ces derniers contiennent des informations sur des demandes de crédit réalisé par des clients auprès d'une banque. Chaque fichiers contient les mêmes 27 variables. Dans un premier temps, nous évaluerons la qualité de nos données, puis dans le cas échéant, nous traiterons les anomalies.
+
+## Qualité des données
+
+
+
+## Nettoyage des données
+
+
+
+
+
+
+
+
