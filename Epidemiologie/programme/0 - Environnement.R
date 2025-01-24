@@ -49,6 +49,8 @@ conflict_prefer("slice", "dplyr")
 
 # Import data -----
 
+# Données remplies par le médecin
 analysis <- read_excel("data/ESMAA_analysis.xlsx")
 
+# Données remplies par le patient
 patient <- read_excel("data/ESMAA_patient.xlsx")
