@@ -51,9 +51,9 @@ conflict_prefer("slice", "dplyr")
 
 # Import data -----
 
-periode_2021 <- read_sas("data/bt2021.sas7bdat")
+# periode_2021 <- read_sas("data/bt2021.sas7bdat")
 
-periode_2022 <- read_sas("data/bt2022.sas7bdat")
+# periode_2022 <- read_sas("data/bt2022.sas7bdat")
 
 periode_2023 <- read_sas("data/bt2023.sas7bdat")
 
