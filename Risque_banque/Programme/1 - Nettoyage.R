@@ -14,25 +14,25 @@
 
 # 2021
 
-periode_2021 <- periode_2021 %>%
-  mutate(across(everything(), ~ { attr(., "label") <- NULL; . })) # Suppression des labes de toutes les var
+# periode_2021 <- periode_2021 %>%
+  # mutate(across(everything(), ~ { attr(., "label") <- NULL; . })) # Suppression des labes de toutes les var
 
-periode_2021 <- periode_2021 %>%
-  mutate(across(where(is.character), as.factor)) # Transformation en factor() des var ql
+# periode_2021 <- periode_2021 %>%
+  # mutate(across(where(is.character), as.factor)) # Transformation en factor() des var ql
 
-periode_2021$DS_DT_GESTIONDEF <- as.Date(periode_2021$DS_DT_GESTIONDEF) # Transformation au format date
+# periode_2021$DS_DT_GESTIONDEF <- as.Date(periode_2021$DS_DT_GESTIONDEF) # Transformation au format date
 
 
 
 # 2022
 
-periode_2022 <- periode_2022 %>%
-  mutate(across(everything(), ~ { attr(., "label") <- NULL; . })) # Suppression des labes de toutes les var
+# periode_2022 <- periode_2022 %>%
+  # mutate(across(everything(), ~ { attr(., "label") <- NULL; . })) # Suppression des labes de toutes les var
 
-periode_2022 <- periode_2022 %>%
-  mutate(across(where(is.character), as.factor)) # Transformation en factor() des var ql
+# periode_2022 <- periode_2022 %>%
+  # mutate(across(where(is.character), as.factor)) # Transformation en factor() des var ql
 
-periode_2022$DS_DT_GESTIONDEF <- as.Date(periode_2022$DS_DT_GESTIONDEF) # Transformation au format date
+# periode_2022$DS_DT_GESTIONDEF <- as.Date(periode_2022$DS_DT_GESTIONDEF) # Transformation au format date
 
 
 
