@@ -14,6 +14,65 @@ linestretch: 1.5
 lang: fr
 ---
 
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+library(haven)
+library(tidyverse)
+library(knitr)
+library(ROCR)
+library(pROC)
+```
+
+
+```{r include=FALSE}
+# Environnement -----
+
+periode_2023 <- read_sas("/Users/rs777/Documents/Projet-datascience/Risque_banque/data/bt2023.sas7bdat")
+periode_reference <- read_sas("/Users/rs777/Documents/Projet-datascience/Risque_banque/data//btref.sas7bdat")
+
+#periode_2023$defaut_12M <- as.factor(periode_2023$defaut_12M)
+#periode_reference$defaut_12M <- as.factor(periode_reference$defaut_12M)
+
+# Nettoyage -----
+
+## 2023
+
+periode_2023 <- periode_2023 %>%
+  mutate(across(everything(), ~ { attr(., "label") <- NULL; . })) # Suppression des labes de toutes les var
+periode_2023 <- periode_2023 %>%
+  mutate(across(where(is.character), as.factor)) # Transformation en factor() des var ql
+periode_2023$DS_DT_GESTIONDEF <- as.Date(periode_2023$DS_DT_GESTIONDEF) # Transformation au format date
+
+periode_2023$PD_ID_NDD[periode_2023$PD_ID_NDD == ""] <- NA
+prop_2023 <- prop.table(table(periode_2023$PD_ID_NDD, useNA = "no"))
+set.seed(123)
+periode_2023$PD_ID_NDD[is.na(periode_2023$PD_ID_NDD)] <- sample(
+  as.numeric(names(prop_2023)),
+  size = sum(is.na(periode_2023$PD_ID_NDD)),
+  replace = TRUE,
+  prob = prop_2023
+)
+
+## REFERENCE
+
+periode_reference <- periode_reference %>%
+  mutate(across(everything(), ~ { attr(., "label") <- NULL; . })) # Suppression des labes de toutes les var
+periode_reference <- periode_reference %>%
+  mutate(across(where(is.character), as.factor)) # Transformation en factor() des var ql
+periode_reference$DS_DT_GESTIONDEF <- as.Date(periode_reference$DS_DT_GESTIONDEF) # Transformation au format date
+
+periode_reference$PD_ID_NDD[periode_reference$PD_ID_NDD == ""] <- NA
+prop_reference <- prop.table(table(periode_reference$PD_ID_NDD, useNA = "no"))
+
+set.seed(123)
+periode_reference$PD_ID_NDD[is.na(periode_reference$PD_ID_NDD)] <- sample(
+  as.numeric(names(prop_reference)),
+  size = sum(is.na(periode_reference$PD_ID_NDD)),
+  replace = TRUE,
+  prob = prop_reference
+)
+```
+
+
 <!-- PAGE DE GARDE  -->
 
 ```{=tex}
@@ -66,26 +125,667 @@ BUT SD FA EMS - 2025
 \newpage
 
 # Introduction
+
+```{=tex}
 \begin{flushleft}
     \hspace*{1cm}Lorsque une banque octroi un crédit à un emprunteur, elle s'expose à ce que ce dernier ne puisse rembourser, en partie ou en totalité, les montant engagés. Elle prend donc le risque de supporter des pertes financières. Le risque de crédit correspond à la probabilité d'une perte due à la défaillance d'un emprunteur dans le remboursement d'une dette quelconque. Afin de se couvrir contre le risque de crédit, la banque dispose de plusieurs réponses possibles et complémentaires ; la sélection des bons risques de crédit (politiques d'octroi de crédit), la gestion optimisée des crédits en cours de vie ou encore la couverture financière des risques probables.
 
+La mise en œuvre de modèles d'estimations du risque doit s'accompagner d'un monitoring constant destiné à évaluer la qualité de ces modèles. En effet, un modèle est construit sur une base de données représentative d'une periode donnée. En cas d'évolutions de divers facteurs, le modèle courant peut ne plus être performant. Il est donc primordial de garantir la qualité du modèle pour permettre une estimation correcte du risque.
+
 Ce projet consiste à effectuer un suivi du score de crédit\footnote{Score de prédiction d'un défaut futur du client.} sur la période 2023 en comparaison avec la période de référence. Dans un second temps, nous calibrerons un modèle statistique dans l'obectif de déterminer une probabilité de défaut.
 \end{flushleft}
-
+```
 # Préparation des données
 
-Nous disposons de deux fichiers de données associées à des périodes différentes (2023, Référence). Ces derniers contiennent des informations sur des demandes de crédit réalisé par des clients auprès d'une banque. Chaque fichiers contient les mêmes 27 variables. Dans un premier temps, nous évaluerons la qualité de nos données, puis dans le cas échéant, nous traiterons les anomalies.
+Nous disposons de deux fichiers de données associées à des périodes différentes (période 2023 et période Référence). Ces derniers contiennent des informations sur des demandes de crédit réalisé par des clients auprès d'une banque. Chaque fichier contient les mêmes 27 variables. Dans un premier temps, nous évaluerons la qualité de nos données, puis dans le cas échéant, nous traiterons les anomalies.
 
 ## Qualité des données
 
+Les fichiers de données sont au format SAS, nous les importons sur R. Afin d'évaluer la qualité des données de nos fichiers, nous avons réalisé une étude descriptive uni variée de toutes les variables. Il en ressort les éléments suivants dans les deux fichiers :
 
+-   Les variables suivantes : AN_ID, MS_ID, CONST_MOD, CONST_VAL, SIT_LOG_MOD et SIT_LOG_VAL prennent à chaque fois les mêmes valeurs pour toutes les observations du fichier.
+
+-   La variable DS_DT_GESTIONDEF censée représentée une date est au format *POSIXct*. Ce format représente les dates et heures sous forme d'un nombre de secondes écoulées depuis le 1er janvier 1970 (l'epoch time).
+
+-   Dans le fichier de données de la période 2023, la variable PD_IN_DD contient 4347 (1.91 %) valeurs vides. Nous constatons, la même chose pour les données de la période de référence avec 1769 (0.91 %) valeurs vides pour cette variable.
+
+-   Il n'y a aucune valeur manquante dans les deux fichiers de données.
+
+Le fichier de la période 2023 contient 227 300 observations et 27 variables. Celui de la période de référence contient 193 962 observations et 27 variables.
 
 ## Nettoyage des données
 
+L'objectif de la première étape de ce travail est de suivre l'évolution du score durant la période 2023, en le comparant à la période de référence. Nous avons choisi de ne pas apporter de modifications majeures aux variables, bien que certaines d'entre elles auraient pu être ajustées. Par exemple, plusieurs variables numériques auraient pu être transformées en variables catégorielles. Les seules modifications effectuées sur les deux fichiers de données sont les suivantes :
+
+-   Transformation de la variable DS_DT_GESTIONDEF au format date (yyyy/mm/dd).
+
+-   Les valeurs manquantes de la variable PD_ID_NDD ont été remplacées en respectant la distribution des classes existantes. Cela, de manière a ne pas impacté la répartition initiale des classes.
+
+# Suivi du score en 2023 comparée à la période de référence
+
+Le suivi du score de l'année 2023, ainsi que sa comparaison avec la période de référence, sera structurés en plusieurs étapes. Nous allons reproduire les mêmes analyses que celles utilisées pour valider le modèle lors de sa construction.
+
+## Stabilité des modalités des variables du score
+
+Dans un premier temps, nous allons analyser la stabilité des modalités des variables entrant dans le score. Pour cela, nous calculons l'indice de stabilité des modalités des variables sur la période actuelle (2023) et la période de construction du modèle (référence).
+
+La formule est la suivante :
+
+$$IS = \sum_{i=1}^{N} \left( (Y_i - X_i) \cdot \log\left(\frac{Y_i}{X_i}\right) \right)$$
+
+Avec :
+
+```{=tex}
+\begin{itemize}
+    \item \( i \) : représente la modalité / classe de score (pour \( N \) classes)
+    \item \( Y_i \) : est la fréquence actuelle (en \%) de la classe \( i \)
+    \item \( X_i \) : est la fréquence de la classe \( i \) lors de la construction du modèle
+    \item \( \log \) : est le logarithme naturel (népérien)
+\end{itemize}
+```
+Nous le calculons uniquement sur les variables suffixées par \_MOD et la variable classe_risque_NDD.
+
+\setlength{\tabcolsep}{3pt}
+
+\begin{longtable}{|l|l|l|l|l|l|}
+\hline
+\textbf{Variable} & \textbf{Modalité} & \textbf{Freq 2023} & \textbf{Freq Ref} & \textbf{IS (\%)} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Variable} & \textbf{Modalité} & \textbf{Freq 2023} & \textbf{Freq Ref} & \textbf{IS (\%)} \\
+\hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+\text{CONST\_MOD} & \text{} & 1 & 1 & 0 \\
+\hline
+\text{STATUT\_AFF\_ANC\_IMP\_MOD} & \text{AVEC\_IMP\_BON\_STATUT} & 0.0185 & 0.0239 & 0.135 \\
+ & \text{AVEC\_IMP\_MAUVAIS\_STATUT} & 0.0350 & 0.0180 & 1.13 \\
+ & \text{SANS\_IMP\_BON\_STATUT} & 0.946 & 0.958 & 0.0142 \\
+\hline
+\text{APPORT\_MOD} & \text{APPORT\_0} & 0.259 & 0.189 & 2.20 \\
+ & \text{APPORT\_10} & 0.0685 & 0.0349 & 2.27 \\
+ & \text{APPORT\_15} & 0.0719 & 0.0403 & 1.82 \\
+ & \text{APPORT\_20} & 0.217 & 0.153 & 2.22 \\
+ & \text{APPORT\_45} & 0.0711 & 0.0658 & 0.0417 \\
+ & \text{APPORT\_55} & 0.162 & 0.206 & 1.07 \\
+ & \text{APPORT\_75} & 0.118 & 0.266 & 12.1 \\
+ & \text{APPORT\_90} & 0.0329 & 0.0446 & 0.353 \\
+\hline
+\text{SIT\_LOG\_MOD} & \text{} & 1 & 1 & 0 \\
+\hline
+\text{FORBEARANCE\_MOD} & \text{F} & 0.232 & 0.258 & 0.275 \\
+ & \text{NF} & 0.768 & 0.742 & 0.0894 \\
+\hline
+\text{FIP\_MOD} & \text{AUTRE} & 0.0452 & 0.0491 & 0.0336 \\
+ & \text{BON\_CLIENT} & 0.278 & 0.289 & 0.0452 \\
+ & \text{INDETERMINE} & 0.677 & 0.662 & 0.0349 \\
+\hline
+\text{SIT\_FAM\_AGE\_MOD} & \text{AUTRE} & 0.215 & 0.223 & 0.0299 \\
+ & \text{CONCUBINAGE} & 0.185 & 0.127 & 2.19 \\
+ & \text{MARIE} & 0.600 & 0.650 & 0.401 \\
+\hline
+\text{MATURITE\_MOD} & \text{FIN\_DEPASSEE} & 0.132 & 0.126 & 0.0347 \\
+ & \text{FIN\_ELOIGNE} & 0.292 & 0.308 & 0.0810 \\
+ & \text{FIN\_PROCHE} & 0.575 & 0.566 & 0.0139 \\
+\hline
+\text{DUR\_CTR\_MOD} & \text{DUREE\_CONTRAT\_COURTE} & 0.0974 & 0.137 & 1.32 \\
+ & \text{DUREE\_CONTRAT\_LONGUE} & 0.122 & 0.0978 & 0.524 \\
+ & \text{DUREE\_CONTRAT\_MOYENNE} & 0.781 & 0.766 & 0.524 \\
+\text{CLASSE\_RISQUE\_NDD} & \text{1} & 0.198 & 0.305 & 4.62 \\
+ & \text{2} & 0.497 & 0.424 & 1.16 \\
+ & \text{3} & 0.120 & 0.131 & 0.0985 \\
+ & \text{4} & 0.185 & 0.140 & 1.25 \\
+\hline
+\end{longtable}
+
+La quasi-totalité des modalités des variables présente un indice de stabilité (IS) inférieur à 10%, ce qui indique une stabilité élevée. Seule la modalité APPORT_75 de la variable APPORT_MOD affiche un IS de 12,1%, ce qui constitue une exception notable. Les variables CONST_MOD et SIT_LOG_MOD sont des constantes, ce qui justifie leur IS égal à 0.
+
+## Comparaison de la distribution de notes des scores
+
+Nous comparons ensuite la distribution des scores entre la période de référence et l'année 2023. Cela nous permettra d'analyser les évolutions éventuelles entre ces deux périodes.
+
+Ci-dessous, nous comparons les mesures de dispersion de la variable SCORE dans les deux périodes.
+
+```{r echo=FALSE}
+summary_2023_score <- summary(periode_2023$SCORE)
+summary_2023_score <- data.frame(Statistiques = names(summary_2023_score), Valeurs = as.vector(summary_2023_score))
+kable(summary_2023_score, caption = "Résumé statistique de SCORE pour la période 2023")
+
+summary_reference_score <- summary(periode_reference$SCORE)
+summary_reference_score <- data.frame(Statistiques = names(summary_reference_score), Valeurs = as.vector(summary_reference_score))
+kable(summary_reference_score, caption = "Résumé statistique de SCORE pour la période référence")
+```
+
+On observe des différences entre les deux périodes : le premier quartile, la médiane et la moyenne sont plus élevés en 2023, indiquant que les scores sont globalement plus élevés. Le troisième quartile est également légèrement plus élevé, renforçant cette tendance. En revanche, les valeurs maximales sont proches, suggérant que les scores extrêmes sont similaires.
+
+Afin d'approfondir cette comparaison, nous représentons ci-dessous les courbes de densité des scores pour les deux périodes.
+
+```{r echo=FALSE, fig.height=4, fig.width=6}
+dens_2023 <- density(periode_2023$SCORE)
+dens_reference <- density(periode_reference$SCORE)
+
+plot(dens_2023, main="Comparaison des courbes de densité", xlab="SCORE", ylab="Densité", 
+     col="red", lwd=1, ylim=c(0, 2.1), cex.main = 0.9)
+lines(dens_reference, col="blue", lwd=1)
+
+legend("topright", legend=c("2023", "Référence"), fill=c("red", "blue"))
+```
+Les courbes sont très similaires, avec une concentration importante de valeurs autour de 1,5 pour les deux périodes. Cela suggère des distributions similaires. Pour évaluer statistiquement si les distributions des scores sont significativement différentes entre les deux périodes, nous appliquons le test de Kolmogorov-Smirnov\footnote{Test qui compare la distribution observée d'un échantillon statistique à une distribution théorique.}.
+
+Les hypothèses du test sont les suivantes :
+
+$$
+H_0 : F_{2023} = F_{\text{Référence}} \quad \text{contre} \quad H_1 : F_{2023} \neq F_{\text{Référence}}
+$$
+
+Ci-dessous, nous présentons les résultats du test de Kolmogorov-Smirnov.
+
+```{r echo=FALSE, fig.height=4, fig.width=6, warning=FALSE}
+ks.test(periode_2023$SCORE,periode_reference$SCORE)
+```
+
+Le test ayant été réalisé au seuil de significativité $\alpha = 0.05$ et la p-valeur étant largement inférieure à ce seuil, nous rejetons l'hypothèse nulle $H_0$. Ainsi, nous concluons que les deux distributions sont significativement différentes. Cela signifie qu'entre la construction du modèle sur la période de référence et l'année 2023, le score a évolué de manière notable.
+
+## Taux de défaut constatés par modalité des variables
+
+Ici, notre objectif est d'observer l'évolution du pouvoir discriminant de chaque variable. Pour cela, nous allons étudier le taux de défaut observé pour chaque modalité des variables, en le comparant entre la période de référence et l'année 2023. La variable binaire defaut_12M (0 = pas de défaut, 1 = défaut) correspond à la prédiction du modèle. Afin de mesurer le pouvoir discriminant de chaque variable dans la prédiction des défauts, nous utiliserons l'Information Value (IV) donnée par la formule suivante : 
+
+$$I\!V = \sum_{i=1}^{N} \left[ \left( \text{Proportion des bons} - \text{Proportion des mauvais} \right) \times \log\left(\frac{\text{Proportion des bons}}{\text{Proportion des mauvais}}\right) \right]$$
+
+$$\text{Le ratio} \quad \frac{\text{Proportion des bons}}{\text{Proportion des mauvais}} \quad \text{est appelé "odd ratio" de la classe/modalité sur laquelle il est calculé.}$$
+$$\log\left(\frac{\text{Proportion des bons}}{\text{Proportion des mauvais}}\right) \quad \text{est appelé "Weight of Evidence" (WOE).}$$
+
+Les résultats pour la période 2023 sont présentés dans le tableau suivant.
+La colonne Prop_0 correspond à la proportion d'observations où la variable cible est égale à 0 et la colonne Prop_1, la proportion d'observations où la variable cible est égale à 1.
+
+\setlength{\tabcolsep}{3pt}
+
+\begin{longtable}{|l|l|l|l|l|l|}
+\hline
+\textbf{Variable} & \textbf{Modalité} & \textbf{Prop\_0} & \textbf{Prop\_1} & \textbf{IV} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Variable} & \textbf{Modalité} & \textbf{Prop\_0} & \textbf{Prop\_1} & \textbf{IV} \\
+\hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+\text{STATUT\_AFF\_ANC\_IMP\_MOD} & \text{AVEC\_IMP\_BON\_STATUT} & $0.02$ & $0.16$ & $0.31$ \\
+& \text{AVEC\_IMP\_MAUVAIS\_STATUT} & $0.03$ & $0.41$ & $0.94$ \\
+& \text{SANS\_IMP\_BON\_STATUT} & $0.95$ & $0.44$ & $0.40$ \\
+\hline
+\text{SIT\_LOG\_MOD} & \text{} & $1$ & $1$ & $0$ \\
+\hline
+\text{SIT\_FAM\_AGE\_MOD} & \text{AUTRE} & $0.21$ & $0.34$ & $0.06$ \\
+& \text{CONCUBINAGE} & $0.19$ & $0.24$ & $0.02$ \\
+& \text{MARIE} & $0.60$ & $0.42$ & $0.07$ \\
+\hline
+\text{PD\_ID\_NDD} & \text{1} & $0.20$ & $0.03$ & $0.32$ \\
+& \text{2} & $0.51$ & $0.24$ & $0.20$ \\
+& \text{3} & $0.12$ & $0.12$ & $0.00$ \\
+& \text{4} & $0.17$ & $0.60$ & $0.57$ \\
+\hline
+\text{MATURITE\_MOD} & \text{FIN\_DEPASSEE} & $0.13$ & $0.08$ & $0.03$ \\
+& \text{FIN\_ELOIGNE} & $0.29$ & $0.34$ & $0.01$ \\
+& \text{FIN\_PROCHE} & $0.58$ & $0.58$ & $0.00$ \\
+\hline
+\text{FORBEARANCE\_MOD} & \text{F} & $0.23$ & $0.07$ & $0.20$ \\
+& \text{NF} & $0.77$ & $0.93$ & $0.03$ \\
+\hline
+\text{FIP\_MOD} & \text{AUTRE} & $0.04$ & $0.10$ & $0.04$ \\
+& \text{BON\_CLIENT} & $0.28$ & $0.15$ & $0.08$ \\
+& \text{INDETERMINE} & $0.68$ & $0.75$ & $0.01$ \\
+\hline
+\text{DUR\_CTR\_MOD} & \text{DUREE\_CONTRAT\_COURTE} & $0.10$ & $0.04$ & $0.05$ \\
+& \text{DUREE\_CONTRAT\_LONGUE} & $0.12$ & $0.24$ & $0.09$ \\
+& \text{DUREE\_CONTRAT\_MOYENNE} & $0.78$ & $0.72$ & $0.01$ \\
+\hline
+\text{CONST\_MOD} & \text{} & $1$ & $1$ & $0$ \\
+\hline
+\text{APPORT\_MOD} & \text{APPORT\_0} & $0.26$ & $0.57$ & $0.25$ \\
+& \text{APPORT\_10} & $0.07$ & $0.08$ & $0.00$ \\
+& \text{APPORT\_15} & $0.07$ & $0.08$ & $0.00$ \\
+& \text{APPORT\_20} & $0.22$ & $0.16$ & $0.02$ \\
+& \text{APPORT\_45} & $0.07$ & $0.03$ & $0.03$ \\
+& \text{APPORT\_55} & $0.16$ & $0.05$ & $0.15$ \\
+& \text{APPORT\_75} & $0.12$ & $0.03$ & $0.11$ \\
+& \text{APPORT\_90} & $0.03$ & $0.01$ & $0.04$ \\
+\end{longtable}
+
+Dans le tableau ci-dessus, plusieurs modalités présentent un IV supérieur à 2 %. Par exemple, toutes les modalités de la variable STATUT_AFF_ANC_IMP_MOD affichent un IV supérieur à 2 %. De même, les modalités 1, 2 et 4 de la variable PD_ID_NDD, la modalité F de la variable FORBEARANCE_MOD, ainsi que la modalité APPORT_0 de la variable APPORT_MOD se distinguent par un IV supérieur à ce seuil. Ces résultats indiquent que ces modalités ont un pouvoir discriminant notable dans la prédiction de la variable cible.
+
+Ci-dessous, nous observons le même tableau pour la période de référence.
+
+\setlength{\tabcolsep}{3pt}
+
+\begin{longtable}{|l|l|l|l|l|l|}
+\hline
+\textbf{Variable} & \textbf{Modalité} & \textbf{Prop\_0} & \textbf{Prop\_1} & \textbf{IV} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Variable} & \textbf{Modalité} & \textbf{Prop\_0} & \textbf{Prop\_1} & \textbf{IV} \\
+\hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+\text{STATUT\_AFF\_ANC\_IMP\_MOD} & \text{AVEC\_IMP\_BON\_STATUT} & $0.02$ & $0.20$ & $0.39$ \\
+& \text{AVEC\_IMP\_MAUVAIS\_STATUT} & $0.02$ & $0.33$ & $0.94$ \\
+& \text{SANS\_IMP\_BON\_STATUT} & $0.96$ & $0.47$ & $0.35$ \\
+\hline
+\text{SIT\_LOG\_MOD} & \text{} & $1$ & $1$ & $0$ \\
+\hline
+\text{SIT\_FAM\_AGE\_MOD} & \text{AUTRE} & $0.22$ & $0.35$ & $0.06$ \\
+& \text{CONCUBINAGE} & $0.13$ & $0.13$ & $0$ \\
+& \text{MARIE} & $0.65$ & $0.52$ & $0.03$ \\
+\hline
+\text{PD\_ID\_NDD} & \text{1} & $0.31$ & $0.06$ & $0.41$ \\
+& \text{2} & $0.43$ & $0.23$ & $0.12$ \\
+& \text{3} & $0.13$ & $0.11$ & $0.00$ \\
+& \text{4} & $0.13$ & $0.60$ & $0.72$ \\
+\hline
+\text{MATURITE\_MOD} & \text{FIN\_DEPASSEE} & $0.13$ & $0.05$ & $0.08$ \\
+& \text{FIN\_ELOIGNE} & $0.31$ & $0.36$ & $0.01$ \\
+& \text{FIN\_PROCHE} & $0.57$ & $0.59$ & $0.00$ \\
+\hline
+\text{FORBEARANCE\_MOD} & \text{F} & $0.26$ & $0.13$ & $0.9$ \\
+& \text{NF} & $0.74$ & $0.87$ & $0.02$ \\
+\hline
+\text{FIP\_MOD} & \text{AUTRE} & $0.05$ & $0.13$ & $0.08$ \\
+& \text{BON\_CLIENT} & $0.29$ & $0.23$ & $0.01$ \\
+& \text{INDETERMINE} & $0.66$ & $0.64$ & $0$ \\
+\hline
+\text{DUR\_CTR\_MOD} & \text{DUREE\_CONTRAT\_COURTE} & $0.14$ & $0.07$ & $0.04$ \\
+& \text{DUREE\_CONTRAT\_LONGUE} & $0.10$ & $0.21$ & $0.09$ \\
+& \text{DUREE\_CONTRAT\_MOYENNE} & $0.77$ & $0.72$ & $0$ \\
+\hline
+\text{CONST\_MOD} & \text{} & $1$ & $1$ & $0$ \\
+\hline
+\text{APPORT\_MOD} & \text{APPORT\_0} & $0.19$ & $0.52$ & $0.34$ \\
+& \text{APPORT\_10} & $0.03$ & $0.06$ & $0.01$ \\
+& \text{APPORT\_15} & $0.04$ & $0.06$ & $0.01$ \\
+& \text{APPORT\_20} & $0.15$ & $0.16$ & $0$ \\
+& \text{APPORT\_45} & $0.07$ & $0.04$ & $0.02$ \\
+& \text{APPORT\_55} & $0.21$ & $0.08$ & $0.13$ \\
+& \text{APPORT\_75} & $0.27$ & $0.08$ & $0.23$ \\
+& \text{APPORT\_90} & $0.04$ & $0.01$ & $0.06$ \\
+\end{longtable}
 
 
+En ce qui concerne la période de référence, les modalités présentant un IV supérieur à 2 % incluent les trois modalités de la variable STATUT_AFF_ANC_IMP_MOD, les modalités 1 et 2 de la variable PD_ID_NDD, la modalité F de la variable FORBEARANCE_MOD, ainsi que les modalités APPORT_0 et APPORT_75 de la variable APPORT_MOD. 
+
+En analysant les résultats d'IV pour les deux périodes, on observe que certaines modalités restent constantes dans leur pouvoir discriminant, tandis que d'autres varient légèrement. Pour les deux périodes, les modalités de la variable STATUT_AFF_ANC_IMP_MOD se distinguent par un IV supérieur à 2 %, ce qui indique que cette variable conserve un fort pouvoir discriminant dans les deux périodes. De même, les modalités 1 et 2 de la variable PD_ID_NDD, ainsi que la modalité F de la variable FORBEARANCE_MOD, continuent de montrer une forte capacité à discriminer entre les groupes cible dans les deux périodes. Ces variables semblent donc jouer un rôle clé dans la prédiction des comportements de défaut, indépendamment de la période étudiée.
+
+Cependant, quelques différences émergent entre les périodes. Par exemple, la modalité APPORT_75 de la variable APPORT_MOD affiche un IV supérieur à 2 % dans la période de référence, mais n'atteint pas ce seuil dans la période 2023, suggérant une variation de son pouvoir discriminant au fil du temps. À l'inverse, la modalité APPORT_0 reste discriminante dans les deux périodes, renforçant son utilité comme variable explicative stable au cours du temps. Ainsi, bien que certaines variables conservent un pouvoir discriminant élevé au fil du temps, d'autres montrent une évolution, ce qui pourrait être dû à des changements dans le comportement des emprunteurs ou à des ajustements dans les modalités des variables. Ce constat suggère que les modèles doivent être régulièrement réévalués pour intégrer ces variations et maintenir leur capacité prédictive.
+
+## Indice de performance du modèle
+
+Nous allons maintenant établir un indice de performance du modèle, afin de mieux comprendre sa capacité à discriminer entre les différentes classes et à prédire avec précision les résultats. Il existe plusieurs indices permettant d’évaluer la qualité d’un modèle de classification. Ici, nous nous concentrerons sur l’indice de Gini. Il mesure la performance du score.
+Ce dernier est donné par la formule suivante : 
+
+$$
+\text{Indice de Gini} = 1 - \sum_{i=1}^{k} p_i^2
+$$
+
+Le graphique ci-dessous représente les courbes ROC pour la période de référence et la période 2023, avec les indices de Gini correspondants. La courbe rouge correspond à la période de référence, tandis que la courbe bleue représente la période 2023. La ligne noire représente un modèle aléatoire.
+
+```{r echo=FALSE, fig.height=4, fig.width=6}
+pred_prob_ref <- periode_reference$SCORE
+pred_ref <- prediction(pred_prob_ref, periode_reference$defaut_12M)
+perf_ref <- performance(pred_ref, "tpr", "fpr")
+auc_ref <- performance(pred_ref, "auc")@y.values[[1]]
+gini_ref <- 2 * auc_ref - 1
+
+pred_prob_2023 <- periode_2023$SCORE
+pred_2023 <- prediction(pred_prob_2023, periode_2023$defaut_12M)
+perf_2023 <- performance(pred_2023, "tpr", "fpr")
+auc_2023 <- performance(pred_2023, "auc")@y.values[[1]]
+gini_2023 <- 2 * auc_2023 - 1
+
+plot(perf_ref, main = "Courbe ROC", cex.main = 0.9,
+     col = "red", lwd = 2, xlim = c(0, 1), ylim = c(0, 1), xlab = "Spécificité", ylab = "Sensibilité")
+abline(a = 0, b = 1, col = "black", lty = 2)
+plot(perf_2023, col = "blue", lwd = 2, add = TRUE)
+legend("bottomright", legend = c("Période de Référence", "Période 2023"), 
+       col = c("red", "blue"), lwd = 2)
+```
+
+L'indice de Gini représente le double de l'aire entre la courbe de performance (rouge) et la courbe de modèle aléatoire (noire). Pour les deux périodes, les indices de Gini sont égaux ou supérieurs à 60 %, ce qui est généralement considéré comme un bon résultat. En observant le graphique, on remarque également que l'indice de Gini pour la période 2023 n'a pratiquement pas diminué par rapport à la période de référence, ce qui est un signe positif, indiquant que la performance du modèle reste stable au fil du temps.
 
 
+L'Area Under the Curve (AUC), ou aire sous la courbe, est une métrique couramment utilisée pour évaluer la performance d'un modèle de classification. Elle mesure la capacité du modèle à discriminer correctement entre les différentes classes (par exemple, défaut vs non-défaut). Un AUC élevé indique une meilleure capacité de discrimination. Dans l'analyse suivante, nous comparons les AUC des deux périodes afin d'évaluer si cette métrique a évolué au fil du temps et si la performance du modèle est restée stable.
+
+```{r echo=FALSE}
+roc_ref <- roc(periode_reference$defaut_12M, periode_reference$SCORE, quiet = TRUE)
+roc_2023 <- roc(periode_2023$defaut_12M, periode_2023$SCORE, quiet = TRUE)
+auc_ref <- auc(roc_ref)
+auc_2023 <- auc(roc_2023)
+gini_ref <- 2 * auc_ref - 1
+gini_2023 <- 2 * auc_2023 - 1
+resultats_performance <- data.frame(
+  Période = c("Période de référence", "Période 2023"),
+  AUC = round(c(auc_ref, auc_2023), 3),
+  Gini = round(c(gini_ref, gini_2023), 3)
+)
+kable(resultats_performance, caption = "Comparaison indice de performance")
+```
+
+L'AUC reste presque identique entre les deux périodes, avec une légère diminution de 0.003 en 2023. Cela signifie que le modèle conserve une capacité similaire à distinguer entre les classes dans les deux périodes. Les deux AUC sont plutôt robuste et fiable. Le Gini montre une légère baisse de 0.006 entre les deux périodes. Bien que cette diminution soit minime, elle reste dans une fourchette acceptable. Les deux périodes conservent des indices de Gini supérieurs à 60 %, ce qui est un bon niveau.
+
+En somme, les deux indices restent très proches entre la période de référence et la période 2023, suggérant une stabilité du modèle. La légère diminution reste dans une plage acceptable.
+
+## Courbe de lift
+
+Le lift est une mesure de la performance d'un modèle prédictif ou descriptif, qui est évaluée par rapport à un modèle de référence basé sur des choix aléatoires. La courbe de lift permet d'observer l'amélioration (ou le "lift") générée par l'utilisation d'un modèle de classification par rapport à une approche aléatoire. En d'autres termes, elle permet de déterminer si le modèle en question superforme un modèle de base qui attribuerait des probabilités de manière aléatoire.
+
+Nous allons maintenant réaliser la courbe de lift pour les deux périodes afin de comparer la performance de notre modèle de classification sur chacune d'elles.
+
+```{r echo=FALSE, fig.height=4, fig.width=6}
+lift_curve <- function(data, score_col, target_col) {
+  data <- data %>% arrange(desc(!!sym(score_col)))
+  data <- data %>%
+    mutate(cum_rank = row_number(),
+           cum_total = n(),
+           cum_defauts = cumsum(!!sym(target_col)),
+           total_defauts = sum(!!sym(target_col), na.rm = TRUE),
+           lift = cum_defauts / total_defauts)
+  data <- data %>%
+    mutate(cum_prop_pop = cum_rank / cum_total)
+  return(data)
+}
+
+lift_ref <- lift_curve(periode_reference, score_col = "SCORE", target_col = "defaut_12M")
+lift_2023 <- lift_curve(periode_2023, score_col = "SCORE", target_col = "defaut_12M")
+plot(lift_ref$cum_prop_pop, lift_ref$lift, type = "l", col = "red", 
+     xlab = "Proportion cumulative de la population", 
+     ylab = "Lift cumulatif", 
+     main = "Courbe de Lift", 
+     lwd = 2, xlim = c(0, 1), ylim = c(0, 1))
+lines(lift_2023$cum_prop_pop, lift_2023$lift, col = "blue", lwd = 2)
+lines(c(0, 1), c(0, 1), col = "black", lty = 2, lwd = 2)
+legend("bottomright", legend = c("Période de Référence", "Période 2023"), 
+       col = c("red", "blue"), lwd = 2)
+```
+
+La droite noire en pointillés représente un modèle aléatoire (sans capacité discriminante). Les deux courbes
+s’éloignent significativement de cette référence, confirmant que le modèle est bien supérieur à un modèle sans
+valeur prédictive. Cela reflète une bonne performance globale pour la détection des défauts.
+
+Les courbes des deux périodes sont presque identiques et évoluent de manière quasi-parallèle. Cela suggère que le modèle conserve une excellente capacité discriminante et reste stable entre les deux périodes. Au début, les courbes montrent une augmentation rapide, atteignant un lift cumulatif de 0.5, ce qui indique que le modèle parvient à identifier une proportion significative de cas positifs dans les premières fractions de la population ciblée. Le modèle identifie donc efficacement les individus à risque élevé.
+
+Cependant, une légère différence est observée entre les deux courbes, avec celle de 2023 légèrement inférieure à celle de la période de référence, notamment au début, où l'écart est plus marqué. Cela pourrait suggérer une légère dégradation du modèle en 2023. Toutefois, à mesure que l'on inclut davantage de personnes, les deux courbes convergent, ce qui indique que la performance du modèle se stabilise lorsque la proportion de la population ciblée augmente.
+
+En conclusion, le modèle montre des performances solides, bien supérieures à celles d’un modèle aléatoire, comme le confirme l’écart par rapport à la droite noire. Les courbes des deux périodes sont presque identiques, suggérant que la capacité discriminante du modèle est stable entre la période de référence et 2023. Bien qu’une légère différence soit visible au début, cela n’indique pas une dégradation du modèle ; au contraire, la performance reste bonne et stable, même avec l’élargissement de la population ciblée.
+
+## Distribution des défauts et des non-défauts
+
+Le tableau suivant présente la répartition en pourcentage des individus défaillants et non-défaillants au sein des périodes de référence et de 2023.
+
+```{r echo=FALSE}
+periode_2023$defaut_12M <- as.factor(periode_2023$defaut_12M)
+periode_reference$defaut_12M <- as.factor(periode_reference$defaut_12M)
+
+repartition_ref <- prop.table(table(periode_reference$defaut_12M)) * 100
+repartition_2023 <- prop.table(table(periode_2023$defaut_12M)) * 100
+
+repartition_ref <- round(repartition_ref, 2)
+repartition_2023 <- round(repartition_2023, 2)
+
+table_comparative <- data.frame(
+  "Statut du défaut" = c("Non défaillant", "Défaillant"),
+  "Période de référence" = c(repartition_ref["0"], repartition_ref["1"]),
+  "Période 2023" = c(repartition_2023["0"], repartition_2023["1"])
+)
+
+kable(table_comparative, caption = "Comparaison des défauts (en %)")
+```
+
+Les deux périodes présentent une répartition des défauts et des non-défaillants très similaire. En 2023, la proportion d'individus non-défaillants est de 99,35%, légèrement supérieure à celle de la période de référence (99,29%). Le pourcentage des défaillants est de 0,65% en 2023, contre 0,71% dans la période de référence. Cette légère diminution du nombre de défaillants pourrait suggérer une amélioration de la capacité du modèle à détecter les risques ou une gestion plus efficace des défauts.
+
+Ainsi, le modèle de 2023 reste performant, avec une proportion de défauts stable, bien que légèrement en diminution.
+
+Nous avons également réalisé un test de proportion bilatéral pour évaluer la différence entre les taux de défaillants des deux périodes.
+
+$$
+H_0 : p_{2023} = p_{\text{Référence}} \quad \text{contre} \quad H_1 : p_{2023} \neq p_{\text{Référence}}
+$$
+Les résultats du test sont présentées ci-dessous : 
+
+```{r echo=FALSE}
+x1 <- sum(periode_reference$defaut_12M == "1")
+n1 <- length(periode_reference$defaut_12M)
+x2 <- sum(periode_2023$defaut_12M == "1")
+n2 <- length(periode_2023$defaut_12M)
+prop.test(c(x1, x2), c(n1, n2))
+```
+
+La p-valeur obtenue est de 0.02122, ce qui est inférieur au seuil de significativité de 0.05. Cela conduit au rejet de l'hypothèse nulle $H_0$, indiquant qu'il existe une différence statistiquement significative entre les proportions de défaillants dans les deux périodes. La proportion des défaillants dans la période de référence est de 0.71%, tandis que celle de 2023 est légèrement inférieure à 0.65%.
+
+## Répartition du portefeuille par classe de risque
+
+Dans cette partie, nous allons analyser la répartition du portefeuille de crédits selon les classes de risque, en considérant à la fois le nombre d'observations et les encours financiers correspondants, pour chacune des deux périodes étudiées.
+
+Le tableau ci-dessous présente une comparaison de la répartition du nombre d'individus par classe de risque entre l'année 2023 et la période de référence.
+
+```{r echo=FALSE}
+frequence_ref <- periode_reference %>%
+  count(`PD_ID_NDD`) %>%
+  mutate(Frequence = n / sum(n) * 100) %>%
+  select(`PD_ID_NDD`, n, Frequence)
+
+frequence_2023 <- periode_2023 %>%
+  count(`PD_ID_NDD`) %>%
+  mutate(Frequence = n / sum(n) * 100) %>%
+  select(`PD_ID_NDD`, n, Frequence)
+
+table_comparative <- merge(
+  frequence_ref, 
+  frequence_2023, 
+  by = "PD_ID_NDD", 
+  suffixes = c("_reference", "_2023")
+)
+
+colnames(table_comparative) <- c(
+  "Classe de risque", 
+  "Effectif référence", 
+  "Fréquence référence (%)", 
+  "Effectif 2023", 
+  "Fréquence 2023 (%)"
+)
+
+table_comparative <- table_comparative %>%
+  mutate(across(-`Classe de risque`, round, 2))
+
+kable(table_comparative, caption = "Répartition des effectifs et fréquences par classe de risque")
+```
+
+La répartition par classe de risque met en évidence une diminution significative de la proportion des crédits les moins risqués (classe 1), passant de 30.78% dans la période de référence à 20.18% en 2023. En parallèle, on observe une augmentation marquée de la proportion des crédits de classe 2, qui représente désormais 50.72% en 2023 contre 42.82% dans la période de référence. De plus, la proportion des crédits les plus risqués (classe 4) progresse également, passant de 13.19% à 16.91%. Cette évolution indique un changement dans le profil global du portefeuille, suggérant une concentration accrue dans les segments intermédiaires (classe 2) et les segments plus risqués (classe 4) en 2023.
 
 
+Pour approfondir cette analyse, nous allons examiner la répartition des encours par classe de risque sur les deux périodes. Cette perspective permettra de mieux comprendre l'évolution des engagements financiers associés à chaque classe de risque et d'évaluer si les tendances observées en termes de fréquences se reflètent également dans les volumes d'encours.
+
+```{r echo=FALSE}
+encours_ref <- periode_reference %>%
+  group_by(`PD_ID_NDD`) %>%
+  summarise(
+    Effectif = n(),
+    Encours = sum(`XE_EXP_B2`, na.rm = TRUE)
+  ) %>%
+  mutate(Frequence = Encours / sum(Encours) * 100)
+
+encours_2023 <- periode_2023 %>%
+  group_by(`PD_ID_NDD`) %>%
+  summarise(
+    Effectif = n(),
+    Encours = sum(`XE_EXP_B2`, na.rm = TRUE)
+  ) %>%
+  mutate(Frequence = Encours / sum(Encours) * 100)
+
+table_encours <- merge(
+  encours_ref %>% select(`PD_ID_NDD`, Effectif, Frequence),
+  encours_2023 %>% select(`PD_ID_NDD`, Effectif, Frequence),
+  by = "PD_ID_NDD",
+  suffixes = c("_reference", "_2023")
+)
+
+colnames(table_encours) <- c(
+  "Classe de risque",
+  "Effectif référence",
+  "Encours référence (%)",
+  "Effectif 2023",
+  "Encours 2023 (%)"
+)
+table_encours <- table_encours %>%
+  mutate(across(-`Classe de risque`, round, 2))
+kable(table_encours, caption = "Répartition des effectifs et des encours par classe de risque")
+```
+
+Globalement, la période 2023 montre un rééquilibrage du portefeuille, avec une forte concentration d'encours dans les classes 2 et 1 en 2023. La classe 2, en particulier, prend une importance plus grande, suggérant une volonté d'augmenter l'exposition aux crédits à risque modéré tout en réduisant l'exposition aux crédits les moins risqués (classe 1) et aux crédits les plus risqués (classe 4). La stabilité ou la faible variation dans la classe 3 montre que les crédits à risque modéré sont relativement bien gérés dans les deux périodes.
+
+Cette répartition pourrait refléter une stratégie de gestion du portefeuille visant à maximiser le rendement tout en maîtrisant le risque. La diminution des encours dans la classe 1, couplée à une augmentation dans les classes 2 et 4, pourrait être une réponse aux conditions économiques ou aux changements dans les critères de souscription, ainsi qu'une réévaluation de la rentabilité des crédits plus risqués.
+
+En conclusion, on observe un réajustement stratégique du portefeuille. On observe une diminution de l'exposition aux crédits les moins risqués (classe 1), une forte augmentation des crédits à risque modéré (classe 2) et une légère hausse des crédits plus risqués (classe 4). Ce rééquilibrage, tant en termes d'effectifs que d'encours, semble indiquer une stratégie visant à optimiser le profil de risque du portefeuille. En concentrant davantage les encours sur les classes intermédiaires et en réduisant les crédits les plus risqués, la gestion du portefeuille s'oriente probablement vers un meilleur équilibre entre rendement et maîtrise du risque.
+
+## Valeur d'information des classes de risque
+
+Nous allons désormais calculer la valeur d'information pour chaque classe de risque. L'objectif est d'évaluer la capacité de chaque classe à être un facteur discriminant, c'est-à-dire à différencier efficacement les individus en fonction de leur probabilité de défaut. Cette analyse permettra d'estimer le pouvoir discriminant des différentes classes de risque.
+
+```{r echo=FALSE}
+calc_iv <- function(data) { 
+  df <- data %>%
+    group_by(PD_ID_NDD) %>%
+    summarise(
+      effectifs = n(),
+      bons = sum(defaut_12M == 0),
+      mauvais = sum(defaut_12M == 1)
+    ) %>%
+    mutate(
+      prop_bons = bons / sum(bons),
+      prop_mauvais = mauvais / sum(mauvais),
+      woe = log(prop_bons / prop_mauvais), 
+      iv = (prop_bons - prop_mauvais) * woe
+    ) %>%
+    select(PD_ID_NDD, iv) %>%
+    arrange(desc(iv))
+
+  return(df) 
+}
+
+iv_2023 <- calc_iv(periode_2023)
+iv_reference <- calc_iv(periode_reference)
+iv_comparatif <- merge(iv_2023, iv_reference, by = "PD_ID_NDD", suffixes = c("_2023", "_reference"))
+colnames(iv_comparatif)[1] <- "Classe de risque"
+kable(iv_comparatif, caption = "Valeur d'information par classe de risque (2023 vs Référence)")
+```
+
+Dans ce tableau, la classe 4 demeure la plus discriminante, avec un IV supérieur à 0.5, bien qu'il ait diminué par rapport à la période de référence. La classe 2, bien que plus faible que la classe 4, présente également un IV supérieur à 0.2, ce qui suggère une capacité raisonnable à différencier les bons des mauvais crédits. Par contre, les classes 1 et 3 ont des valeurs d'information très faibles, proches de 0, ce qui signifie qu'elles ne sont pas très discriminantes. En résumé, seules les classes 2 et 4 montrent des valeurs d'information intéressantes, avec des capacités de discrimination acceptables, tandis que les classes 1 et 3 ne remplissent pas cet objectif, indiquant une faible utilité dans la segmentation du risque.
+
+
+# Calibration du modèle
+
+Nous allons maintenant procéder à la calibration du modèle qui a été précédemment construit et qui a été utilisé pour prédire le défaut. Après avoir suivi le score de ce modèle dans la partie précédente, nous procéderons à sa calibration. Cette étape consiste à diviser le modèle en classes homogènes de risque, à calculer les taux de défaut observés pour chaque classe de risque dans chaque période, puis à déterminer, à partir de ces taux, une probabilité de défaut associée à chaque classe.
+
+Pour une régression logistique, la probabilité de défaut théorique du modèle construit vaut $$\frac{1}{1 + e^{-\text{score}}}$$. Cependant, elle dépend de l'échantillon de construction du modèle.
+
+## Taux de défaut pour chaque classe de risque
+
+Nous allons dans un premier temps calculer les taux de défaut observés par classe de risque pour chaque période.
+
+```{r echo=FALSE}
+periode_2023$defaut_12M <- as.numeric(as.character(periode_2023$defaut_12M))
+taux_defaut_par_classe_2023 <- periode_2023 %>% 
+  group_by(PD_ID_NDD) %>%
+  summarise(
+    Effectif_defaut = sum(defaut_12M == 1, na.rm = TRUE),
+    Effectif_total = n(),
+    Taux_de_defaut_en_pourcentage = round((Effectif_defaut / Effectif_total) * 100, 3)
+  ) %>%
+  rename(Classe_de_risque = PD_ID_NDD) %>%
+  mutate(Periode = "2023")
+periode_reference$defaut_12M <- as.numeric(as.character(periode_reference$defaut_12M))
+taux_defaut_par_classe_reference <- periode_reference %>% 
+  group_by(PD_ID_NDD) %>%
+  summarise(
+    Effectif_defaut = sum(defaut_12M == 1, na.rm = TRUE),
+    Effectif_total = n(),
+    Taux_de_defaut_en_pourcentage = round((Effectif_defaut / Effectif_total) * 100, 3)
+  ) %>%
+  rename(Classe_de_risque = PD_ID_NDD) %>%
+  mutate(Periode = "Reference")
+taux_defaut_combine <- bind_rows(taux_defaut_par_classe_2023, taux_defaut_par_classe_reference)
+taux_defaut_combine <- taux_defaut_combine %>%
+  arrange(Classe_de_risque)
+kable(taux_defaut_combine, 
+      col.names = c("Classe de risque", "Effectif de defaut", "Effectif total", 
+                    "Taux de defaut (%)", "Periode"),
+      caption = "Taux de defaut observes par classe de risque pour 2023 et la periode de reference")
+```
+
+Les classes de risque 1, 2 et 4 montrent une amélioration (baisse du taux de défaut) en 2023 par rapport à la période de référence, ce qui peut indiquer une gestion du risque plus efficace ou des conditions économiques, plus favorables. En revanche, la classe de risque 3 connaît une légère augmentation de son taux de défaut en 2023. Enfin, le taux de défaut reste plus élevé pour les classes de risque supérieures (3 et 4), ce qui est attendu, car ces classes regroupent des emprunteurs à plus haut risque.
+
+## Estimation de la probabilité de défaut
+
+À partir des taux de défaut calculés précédemment, nous allons désormais déterminer la probabilité de défaut pour chaque classe de risque et pour chaque période. Cette dernière correspond au taux de défaut observé moyen (ensuite moyenné tout au long d’un cycle économique complet)
+
+```{r echo=FALSE}
+taux_defaut_combine <- taux_defaut_combine %>% 
+  mutate(PD = Taux_de_defaut_en_pourcentage / 100)
+taux_defaut_combine_select <- taux_defaut_combine %>% 
+  select(Classe_de_risque, PD, Periode)
+kable(taux_defaut_combine_select, 
+      col.names = c("Classe de risque", "Probabilité de défaut (PD)", "Période"), 
+      caption = "Probabilité de défaut observée par classe de risque pour 2023 et la période de référence")
+```
+
+Les classes 1 et 2 ont des probabilités de défaut très faibles et ont tendance à rester stables ou à augmenter légèrement entre la période de référence et 2023. La classe 3 présente une probabilité de défaut plus élevée et montre une légère tendance à l'augmentation. Enfin, la classe 4, bien qu'ayant la probabilité de défaut la plus élevée, présente une amélioration de son taux en 2023 par rapport à la période de référence.
+
+
+# Conclusion
+
+Le modèle étudié dans ce projet présente de bonnes performances globales. Nous avons constaté, dans la première partie, qu'il reste stable et qu'il n'y a pas de variations significatives entre la période de 2023 et la période de référence. Bien que quelques différences aient été observées, elles demeurent minimes et ne remettent pas en cause la solidité du modèle. En effet, l'AUC a dépassé les 80 % pour les deux périodes, et l'indice de Gini a été supérieur à 60 %, ce qui témoigne de la robustesse et de la fiabilité du modèle dans la prédiction des risques.
+
+\newpage{}
+
+# Dictionnaire des variables
+
+|        Variable        |                        Description                        |
+|:--------------------:|:------------------------------------------------:|
+|         AN_ID          |                    Année d’observation                    |
+|       APPORT_MOD       |                 Modalité du taux d’apport                 |
+|       APPORT_VAL       |              Score associé au taux d’apport               |
+|       CONST_MOD        |                 Modalité de la constante                  |
+|       CONST_VAL        |               Score associé à la constante                |
+|    DS_DT_GESTIONDEF    |              Date de mise en œuvre du crédit              |
+|      DUR_CTR_MOD       |              Modalité de la durée du crédit               |
+|      DUR_CTR_VAL       |            Score associé à la durée du crédit             |
+|        FIP_MOD         |           Modalité de la note interne du client           |
+|        FIP_VAL         |         Score associé à la note interne du client         |
+|    FORBEARANCE_MOD     |                Modalité de surendettement                 |
+|    FORBEARANCE_VAL     |              Score associé au surendettement              |
+|      MATURITE_MOD      |             Modalité de la maturité du crédit             |
+|      MATURITE_VAL      |           Score associé à la maturité du crédit           |
+|         MS_ID          |                    Mois d’observation                     |
+|       PD_ID_NDD        |                Classe de risque de défaut                 |
+|         SCORE          |                           Score                           |
+|    SIT_FAM_AGE_MOD     |   Modalité de la situation familiale croisée avec l’âge   |
+|    SIT_FAM_AGE_VAL     | Score associé à la situation familiale croisée avec l’âge |
+|      SIT_LOG_MOD       |             Modalité liée au type de logement             |
+|      SIT_LOG_VAL       |             Score associé au type de logement             |
+| STATUT_AFF_ANC_IMP_MOD |           Modalité lié au statut et aux impayés           |
+| STATUT_AFF_ANC_IMP_VAL |          Score associé au statut et aux impayés           |
+|       XE_EXP_B2        |              Encours du crédit (exposition)               |
+|   classe_risque_NDD    |                     Classe de risque                      |
+|   defaut_12M           |                        Défaut                             |
 
