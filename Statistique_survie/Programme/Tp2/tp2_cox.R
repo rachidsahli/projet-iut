@@ -10,7 +10,7 @@ library(survival)
 
 # Import data
 
-churn <- read.csv("Z:/rapide/Churn.csv")
+churn <- read.csv("/Users/rs777/Documents/Projet-datascience/Statistique_survie/Programme/Tp2/Churn.csv")
 
 ## 1
 
@@ -330,6 +330,11 @@ quantile(KM_PaymentMethod) # Estimation des mesures de position
 
 ## 4 ----
 
+### Conversion de toutes les variables char en factor pour le modele de cox
+ 
+churn[sapply(churn, is.character)] <- lapply(churn[sapply(churn, is.character)], as.factor)
+
+
 churn$InternetService <- relevel(factor(churn$InternetService), ref = "No") # 1ere modalite par defaut
 
 fit = coxph(Surv(churn$tenure, churn$Churn) ~ factor(churn$InternetService))
@@ -408,7 +413,74 @@ summary(fit6)
 
 ## 7
 
-fit_complet <- coxph(Surv(tenure, Churn) ~ . - CustomerID, data = churn)
+fit_complet <- coxph(Surv(tenure, Churn) ~ . - customerID, data = churn)
 summary(fit_complet)
 
 ## 8
+
+fit_interaction <- coxph(Surv(tenure, Churn) ~ . - customerID 
+                         + Partner * PaperlessBilling, data = churn) # Interaction
+summary(fit_interaction)
+
+anova(fit_complet, fit_interaction) # Test statistique du rapport de vrasissemblance
+                                    # permettant de tester s'il existe une interaction 
+                                    # entre ces deux variables
+# La p-valeur est inférieur à 5 %. Ce qui signifie que l'interaction améliore
+# significativement le modèle. A 10 % c'est pareil
+
+## 9
+
+fit_interaction2 <- coxph(Surv(tenure, Churn) ~ . - customerID 
+                         + Partner * InternetService, data = churn)
+summary(fit_interaction2)
+
+anova(fit_complet, fit_interaction2) # Oui interaction significative entre
+                                     # ces deux variables
+
+### Rapport de risque clients partenaires et ceux ne l'étant pas
+
+clients_fibre <- subset(churn, InternetService == "Fiber optic")
+rap_risque_1 <- coxph(Surv(tenure, Churn) ~ Partner, data = clients_fibre)
+summary(rap_risque_1) # Le rapport de risque est de 0.41, donc les clients partenaires
+                      # ont un risque significativement plus faible que l'évenement se produise
+
+### Rapport de risque clients non abonnées et ceux abonnées
+
+clients_dsl <- subset(churn, InternetService == "DSL")
+rap_risque_2 <- coxph(Surv(tenure, Churn) ~ Partner, data = clients_dsl)
+summary(rap_risque_2) # Le rapport de risque de 0.3085 signifie que les clients 
+                      # partenaires ayant un abonnement DSL ont un risque de churn 
+                      # environ 69% plus faible que les non-partenaires, 
+                      # toutes choses étant égales par ailleurs.
+
+# Pour les clients fibre, le risque de churn est 59% plus faible chez les partenaires.
+# Pour les clients DSL, le risque de churn est 69% plus faible chez les partenaires.
+
+library(lava)
+
+estimate(rap_risque_1) # Fibre
+estimate(rap_risque_2) # DSL
+
+## 10
+
+### Méthode de l'AIC
+
+fit_step <- step(fit_complet, direction = "both", trace = 0)
+summary(fit_step)
+AIC(fit_step) # AIC = 25354.88
+
+## 11
+
+test = cox.zph(fit_step, transform = "log")
+test
+
+## 12
+
+fit_strat <- coxph(formula = Surv(tenure, Churn) ~ Partner + Dependents + 
+                      MultipleLines + InternetService + OnlineSecurity + DeviceProtection + 
+                      StreamingTV + StreamingMovies + strata(Contract) + PaperlessBilling + 
+                      PaymentMethod + TotalCharges, data = churn)
+
+## 13
+
+
