@@ -8,6 +8,7 @@ output:
     fig_height: 6
     fig_width: 8
 
+bibliography: bibliographie.bib
 mainfont: "Times New Roman"
 fontsize: 11pt
 linestretch: 1.5
@@ -64,3 +65,21 @@ BUT SD 3 FA EMS - Janvier 2025
 <!-- TABLE DES MATIÈRES: FIN -->
 
 \newpage
+
+# Introduction
+
+L’asthme\footnote{Maladie respiratoire chronique due à une inflammation permanente des bronches (crises, gêne respiratoire, essoufflement, toux sèche, ...)} est reconnu comme un problème de santé publique dans tous les pays, quel que soit leur niveau de développement. En effet, on estime la prévalence de l’asthme à 300 millions de personnes dans le monde en 2015 @GBD2017.
+
+
+
+\newpage
+
+# Références
+
+
+
+
+
+
+
+
