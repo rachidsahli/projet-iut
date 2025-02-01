@@ -1,0 +1,66 @@
+---
+output:
+  pdf_document:
+    toc: false
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+    fig_height: 6
+    fig_width: 8
+
+mainfont: "Times New Roman"
+fontsize: 11pt
+linestretch: 1.5
+lang: fr
+---
+
+<!-- PAGE DE GARDE  -->
+
+```{=tex}
+\begin{titlepage}
+
+\vspace{1cm}
+\begin{center}
+
+\textit{Université Paris Cité}
+
+BUT SD 3 FA EMS - Février 2025
+
+\vspace{5mm}
+
+\textsc{}
+
+\vfill 
+
+{\Huge\bfseries \par}
+
+{\Large\bfseries  Modélisation statistique avancée\par}
+
+\vfill
+
+{\large\itshape Réalisé par}
+
+{\large Rachid SAHLI}
+
+\vspace{5mm}
+
+\end{center}
+\end{titlepage}
+```
+```{=tex}
+\newpage
+\pagenumbering{arabic}
+```
+\phantomsection
+
+<!-- PAGE DE GARDE: FIN  -->
+
+<!-- TABLE DES MATIÈRES -->
+
+```{=tex}
+\newpage
+\tableofcontents
+```
+<!-- TABLE DES MATIÈRES: FIN -->
+
+\newpage
