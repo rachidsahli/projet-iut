@@ -39,8 +39,7 @@ summary(KM, conf.type = "Plain", times = 48) # Estimation de la survie a 4 ans
 ## 3
 
 ### gender  ----
-
-KM_gender <- survfit(Surv(churn$tenure, churn$Churn) ~ churn$gender) # Estimation de la survie selon le sexe
+KM_gender <- survfit(Surv(churn$tenure, churn$Churn) ~ churn$gender) KM_gender <- survfit(Surv(churn$tenure, churn$Churn) ~ churn$gender) # Estimation de la survie selon le sexe
 summary(KM_gender, conf.type = "Plain") # Résultat de l'estimation
 plot(KM_gender,
      col = c(1,2),
