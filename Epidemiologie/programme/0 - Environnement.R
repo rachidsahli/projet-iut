@@ -9,7 +9,7 @@
 #_______________________________________________________________________________
 
 
-setwd("/Users/rs777/Documents/Iut/projets but stid/2024-2025/Projet/Epidemiologie")
+setwd("/Users/rs777/Documents/Projet-datascience/Epidemiologie/")
 
 # Import library -----
 
@@ -22,7 +22,6 @@ library(lubridate)      # Gestion des dates
 library(questionr)      # Statistiques descriptives
 library(skimr)          # Statistiques descriptives
 library(BioStatR)       # Mesures de liaison pour les variables quantitatives (rapport de corrélation)
-library(DescTools)      # Mesures de liaison pour les variables qualitatives (Cramer, Tschuprow)
 library(FactoMineR)     # Caractérisation des classes
 library(naniar)         # Gestion des valeurs manquantes
 library(zoo)            # Gestion des valeurs manquantes
@@ -50,7 +49,7 @@ conflict_prefer("slice", "dplyr")
 # Import data -----
 
 # Données remplies par le médecin
-analysis <- read_excel("data/ESMAA_analysis.xlsx")
+analysis_data <- read_excel("data/ESMAA_analysis.xlsx")
 
 # Données remplies par le patient
-patient <- read_excel("data/ESMAA_patient.xlsx")
+patient_data <- read_excel("data/ESMAA_patient.xlsx")
