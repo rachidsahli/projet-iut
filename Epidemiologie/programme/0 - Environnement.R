@@ -53,3 +53,4 @@ analysis_data <- read_excel("data/ESMAA_analysis.xlsx")
 
 # Données remplies par le patient
 patient_data <- read_excel("data/ESMAA_patient.xlsx")
+

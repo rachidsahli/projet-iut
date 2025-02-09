@@ -35,7 +35,6 @@ var_to_numeric <- c("Age", "Weight (in kg)", "Height (in cm)",
 
 data <- data %>% mutate_at(var_to_numeric, as.numeric)
 
-rm(var_to_numeric)
 
 # Convertion des autres variables en facteur
 
