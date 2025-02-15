@@ -18,7 +18,7 @@ x = as.vector(time(CVSend))
 reg <- lm(y~x)
 t2 <- seq(2023, 2024, by = 1/12)[1:12]
 season <- as.vector(head(dec$seasonal, n = 12))
-z <- (reg$coefficients[1] + reg$coefficients[2] * t2) + season
+z <- (reg$coefficients[1] + reg$coefficients[2]) + season # Problème avec le t*2
 
 # Holt-Winters
 
@@ -55,7 +55,7 @@ Prevision_2023 <- function(charbon) {
               line = list(color = 'purple', width = 2)) %>% 
     layout(
       title = "Prévision de la production d'éléctricité par combustion de charbon en 2023",
-      xaxis = list(title = "Année", range = c(2020, 2024)),
+      xaxis = list(title = "Année", range = c(2021, 2024)),
       yaxis = list(title = "Charbon (mWh)")
     )
   

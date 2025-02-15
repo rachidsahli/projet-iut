@@ -21,6 +21,10 @@ xclass <- cut(as.vector(time(charbon)), 22) # 22 intervalles égaux
 meananual <- tapply(as.vector(charbon), xclass, mean) # Moyenne de y dans chaque intervalles
 t1 <- seq(2001, 2022, length = 22)
 
+# Decomposition pour afficher la tendance
+
+dec <- decompose(charbon, type = "additive")
+
 MOVA_MOVAC <- function(charbon, input) {
   
   charbonMOVA <- calculateMOVA(charbon, input$order_MOVA)
@@ -41,6 +45,9 @@ MOVA_MOVAC <- function(charbon, input) {
     add_lines(x = t1, y = meananual, mode = 'lines', 
               name = 'Régression des moyennes annuels', 
               line = list(color = 'orange', width = 2)) %>%
+    add_lines(x = dates, y = dec$trend, mode = 'lines', 
+              name = 'Tendance', 
+              line = list(color = 'red', width = 2)) %>%
     layout(title = "Production de charbon aux États-Unis",
            xaxis = list(title = "Année"),
            yaxis = list(title = "Production de charbon (mWh)"),

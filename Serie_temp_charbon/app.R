@@ -9,10 +9,14 @@ source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/ui.R
 source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/visualisation.R") # Page visualisation
 source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/decomposition.R") # Page decomposisition
 source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/prevision.R") # Page prevision
+source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/prevision_2022.R") # Page prevision
+
 
 # UI -----
 
 ui <- page_fillable(
+  
+  theme = bs_theme(bootswatch = "lumen"),
   
   titlePanel("Séries Temporelles : Analyse de la production de charbon aux États-Unis entre 2001 et 2022 💡🔨"),
   
@@ -50,7 +54,7 @@ ui <- page_fillable(
     nav_panel("Prévision",
               card(
                 full_screen = TRUE,
-                plotlyOutput(""),
+                plotlyOutput("plot_prevision_2022"),
               ),
               card(
                 full_screen = TRUE,
@@ -85,6 +89,10 @@ server <- function(input, output) {
   
   output$plot_lissage <- renderPlotly({
     Lissage(charbon)
+  })
+  
+  output$plot_prevision_2022 <- renderPlotly({
+    Prevision_2022(charbon_2022)
   })
   
   output$plot_prevision_2023 <- renderPlotly({
