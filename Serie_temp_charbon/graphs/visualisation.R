@@ -19,7 +19,7 @@ calculateMOVAC <- function(charbon, order_MOVAC) {
 
 xclass <- cut(as.vector(time(charbon)), 22) # 22 intervalles égaux
 meananual <- tapply(as.vector(charbon), xclass, mean) # Moyenne de y dans chaque intervalles
-t <- seq(2001, 2022, length = 22)
+t1 <- seq(2001, 2022, length = 22)
 
 MOVA_MOVAC <- function(charbon, input) {
   
@@ -38,7 +38,7 @@ MOVA_MOVAC <- function(charbon, input) {
     add_lines(x = dates, y = charbonMOVAC, mode = 'lines', 
               name = paste0('MMC(', input$order_MOVAC, ')'), 
               line = list(color = 'purple', width = 2)) %>%
-    add_lines(x = t, y = meananual, mode = 'lines', 
+    add_lines(x = t1, y = meananual, mode = 'lines', 
               name = 'Régression des moyennes annuels', 
               line = list(color = 'orange', width = 2)) %>%
     layout(title = "Production de charbon aux États-Unis",
