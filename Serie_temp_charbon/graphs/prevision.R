@@ -10,7 +10,7 @@ source('/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/scripts/0_e
 
 # Trend + saison
 
-dec = decompose(charbon)
+dec = decompose(charbon, type = "additive")
 CVS <- charbon-dec$seasonal
 CVSend <- tail(CVS,n=36)
 y = as.vector(CVSend)
@@ -55,7 +55,7 @@ Prevision_2023 <- function(charbon) {
               line = list(color = 'purple', width = 2)) %>% 
     layout(
       title = "Prévision de la production d'éléctricité par combustion de charbon en 2023",
-      xaxis = list(title = "Année", range = c(2010, 2024)),
+      xaxis = list(title = "Année", range = c(2020, 2024)),
       yaxis = list(title = "Charbon (mWh)")
     )
   
