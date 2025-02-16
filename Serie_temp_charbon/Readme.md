@@ -28,4 +28,6 @@ Nous analysons l'évolution mensuelle de la production d'électricité par combu
   
 ## Aperçu
 
+![image-readme-min](https://github.com/user-attachments/assets/34d3892f-a94e-4909-83df-d68592a22ef2)
+
 
