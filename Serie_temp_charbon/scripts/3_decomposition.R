@@ -1,6 +1,6 @@
 # Objectif : Calculer les CVS et decompositionner la série
 
-source('/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/scripts/0_environnement.R')
+source('scripts/0_environnement.R')
 
 # Décomposition de la série ----
 

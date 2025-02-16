@@ -1,9 +1,6 @@
-
 # Run Environnement.R pour récupérer les données
 
-source('/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/scripts/0_environnement.R')
-
-charbon_2022 <- read.table("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/charbon_usa.txt", col.names = "Charbon mWh")
+charbon_2022 <- read.table("charbon_usa.txt", col.names = "Charbon mWh")
 charbon_2022 <- ts(charbon_2022, frequency = 12, start = c(2001, 1), end = c(2022,1))
 
 # TREND + SAISON
@@ -16,7 +13,7 @@ x_2022 = as.vector(time(CVSend_2022))
 reg_2022 <- lm(y_2022~x_2022)
 t_2022 <- seq(2022, 2022 + 11/12, by = 1/12)
 season_2022 <- as.vector(head(dec_2022$seasonal, n = 12))
-z_2022 <- (reg_2022$coefficients[1] + reg_2022$coefficients[2])+season_2022 # Problème avec le t2
+z_2022 <- (reg_2022$coefficients[1] + reg_2022$coefficients[2]*t_2022)+season_2022 # Problème avec le t2
 
 # HOLT-WINTERS
 

@@ -1,15 +1,20 @@
+# Import library ----
+
 library(shiny)
 library(bslib)
 library(plotly)
+library(rsconnect)
+library(forecast)
+library(tseries)
 
 # Appel des fichiers externes  -----
 
-source('/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/scripts/0_environnement.R') # Données
-source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/ui.R") # Page description
-source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/visualisation.R") # Page visualisation
-source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/decomposition.R") # Page decomposisition
-source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/prevision.R") # Page prevision
-source("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/graphs/prevision_2022.R") # Page prevision
+source('graphs/environnement.R') # Données
+source("graphs/ui.R") # Page description
+source("graphs/visualisation.R") # Page visualisation
+source("graphs/decomposition.R") # Page decomposisition
+source("graphs/prevision.R") # Page prevision
+source("graphs/prevision_2022.R") # Page prevision
 
 
 # UI -----
@@ -18,7 +23,7 @@ ui <- page_fillable(
   
   theme = bs_theme(bootswatch = "lumen"),
   
-  titlePanel("Séries Temporelles : Analyse de la production de charbon aux États-Unis entre 2001 et 2022 💡🔨"),
+  titlePanel("Séries Temporelle : Analyse de la production de charbon aux États-Unis entre 2001 et 2022 💡🔨"),
   
   navset_card_tab(
     
@@ -99,8 +104,6 @@ server <- function(input, output) {
     Prevision_2023(charbon)
   })
   
-  
-  Prevision_2023
 }
 
 

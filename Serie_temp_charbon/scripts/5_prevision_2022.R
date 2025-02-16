@@ -1,6 +1,6 @@
 # Import data ----
 
-charbon_2022 <- read.table("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/charbon_usa.txt", col.names = "Charbon mWh")
+charbon_2022 <- read.table("charbon_usa.txt", col.names = "Charbon mWh")
 
 # Transfomation en série temp ----
 

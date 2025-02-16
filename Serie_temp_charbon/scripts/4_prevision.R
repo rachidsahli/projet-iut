@@ -1,6 +1,6 @@
 # Run Environnement.R pour récupérer les données
 
-source('/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/scripts/0_environnement.R')
+source('scripts/0_environnement.R')
 
 
 # Graphique pour application -----

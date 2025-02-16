@@ -1,6 +1,6 @@
 # Run Environnement.R pour récupérer les données
 
-source('/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/scripts/0_environnement.R')
+source('scripts/0_environnement.R')
 
 # Graphique pour application -----
 
@@ -18,7 +18,7 @@ x = as.vector(time(CVSend))
 reg <- lm(y~x)
 t2 <- seq(2023, 2024, by = 1/12)[1:12]
 season <- as.vector(head(dec$seasonal, n = 12))
-z <- (reg$coefficients[1] + reg$coefficients[2]) + season # Problème avec le t*2
+z <- (reg$coefficients[1] + reg$coefficients[2]*t2) + season # Problème avec le t*2
 
 # Holt-Winters
 

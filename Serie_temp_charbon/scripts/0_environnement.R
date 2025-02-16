@@ -4,7 +4,7 @@ library(dplyr)
 
 # Import data ----
 
-charbon <- read.table("/Users/rs777/Documents/Projet-datascience/Serie_temp_charbon/charbon_usa.txt", col.names = "Charbon mWh")
+charbon <- read.table("charbon_usa.txt", col.names = "Charbon mWh")
 
 # Transfomation en série temp ----
 
