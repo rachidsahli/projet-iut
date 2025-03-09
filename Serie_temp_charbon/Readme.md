@@ -4,11 +4,6 @@ Ce projet a pour objectif d'étudier la **production d'électricité** par combu
 
 URL de l'application : https://d5s8zi-rs-kaki.shinyapps.io/Serie_temp_charbon/
 
-## Description
-
-Nous analysons l'évolution mensuelle de la production d'électricité par combustion de 2001 à 2022 à l'aide de méthode statistiques. Tel que decomposition de la séire, prévision m-holt-winters, modele arma
-
-
 ## Structure du Projet
 
 - **graphs/** : Contient les fonctions permettant de réaliser chaque graphique.
