@@ -1,11 +1,13 @@
-## Migration de données : De SQL à NoSQL
+# Migration de Données : de SQL vers NoSQL 🚗
 
-Ce projet consiste à migrer des données d’un environnement SQL vers un environnement NoSQL pour le compte d’une entreprise automobile.
+Ce projet a pour objectif de migrer des données d’une base relationnelle SQL vers une base NoSQL (de type document), dans le cadre d’une mission pour une entreprise du secteur automobile.
 
-Ce dépôt contient les éléments suivants :
+# Contenu du dépôt 📁
 
--   Rapport complet du projet : **Rapport.pdf**
+Voici les différents fichiers inclus dans ce dépôt :
 
--   Requêtes SQL utilisées dans le projet : **Requetes_sql.ipynb**
+**Rapport.pdf** : Rapport complet décrivant les étapes du projet, les choix techniques et les résultats obtenus.
 
--   Requêtes NoSQL utilisées dans le projet : **Requetes_Nosql.ipynb**
+**Requetes_sql.ipynb** : Notebook contenant les requêtes SQL utilisées pour interroger la base relationnelle.
+
+**Requetes_Nosql.ipynb** : Notebook contenant les requêtes NoSQL (MongoDB) utilisées sur la base de données documentaire.
